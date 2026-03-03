@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Titan Order Book</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #121212; color: #fff; margin: 20px; }
+        .container { display: flex; gap: 40px; }
+        .panel { background: #1e1e1e; padding: 20px; border-radius: 8px; flex: 1; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 8px; text-align: right; border-bottom: 1px solid #333; }
+        th { color: #888; font-weight: normal; }
+        .ask { color: #f23645; }
+        .bid { color: #089981; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #aaa; }
+        input, select, button { width: 100%; box-sizing: border-box; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 4px; }
+        button { background: #2962ff; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:hover { background: #1e4bd8; }
+        button.sell { background: #f23645; }
+        button.sell:hover { background: #d72836; }
+    </style>
+</head>
+<body>
+
+    <h1>Titan Exchange</h1>
+
+    <div class="container">
+        <div class="panel">
+            <h3>Place Order</h3>
+            <div class="form-group">
+                <label>Trader ID</label>
+                <input type="number" id="traderId" value="42" min="0" max="999" />
+            </div>
+            <div class="form-group">
+                <label>Side</label>
+                <select id="side">
+                    <option value="Buy">Buy</option>
+                    <option value="Sell">Sell</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Price</label>
+                <input type="number" id="price" value="1000" />
+            </div>
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" id="quantity" value="10" />
+            </div>
+            <button id="submitBtn" onclick="placeOrder()">Submit Buy Order</button>
+            
+            <div style="margin-top: 40px;">
+                <button onclick="stressTest()" style="background: #555;">Run Auto-Stress Test (500 orders/sec)</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Order Book</h3>
+            <table>
+                <thead>
+                    <tr><th>Price</th><th>Size</th></tr>
+                </thead>
+                <tbody id="asksBody"></tbody>
+            </table>
+            
+            <div style="text-align: center; margin: 15px 0; color: #888; font-size: 1.2em;" id="spreadSpread">---</div>
+            
+            <table>
+                <tbody id="bidsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Fix integrity to allow external script, or don't use integrity for demo -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.10/signalr.min.js"></script>
+    <script>
+        const sideSelect = document.getElementById('side');
+        const submitBtn = document.getElementById('submitBtn');
+        sideSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'Sell') {
+                submitBtn.className = 'sell';
+                submitBtn.innerText = 'Submit Sell Order';
+            } else {
+                submitBtn.className = '';
+                submitBtn.innerText = 'Submit Buy Order';
+            }
+        });
+
+        async function placeOrder() {
+            const req = {
+                traderId: parseInt(document.getElementById('traderId').value),
+                side: document.getElementById('side').value,
+                price: parseInt(document.getElementById('price').value),
+                quantity: parseInt(document.getElementById('quantity').value)
+            };
+            await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(req)
+            });
+        }
+
+        let stressInterval = null;
+        function stressTest() {
+            if (stressInterval) {
+                clearInterval(stressInterval);
+                stressInterval = null;
+                return;
+            }
+            stressInterval = setInterval(() => {
+                const req = {
+                    traderId: Math.floor(Math.random() * 1000),
+                    side: Math.random() > 0.5 ? 'Buy' : 'Sell',
+                    price: 950 + Math.floor(Math.random() * 100),
+                    quantity: 1 + Math.floor(Math.random() * 20)
+                };
+                fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(req)
+                });
+            }, 2); // 500 orders/sec
+        }
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/hub")
+            .build();
+
+        connection.on("OrderBookUpdated", (snapshot, result) => {
+            const asksBody = document.getElementById('asksBody');
+            const bidsBody = document.getElementById('bidsBody');
+            
+            // Asks: highest at top, lowest at bottom (closest to spread)
+            const sortedAsks = [...snapshot.asks].sort((a,b) => b.price - a.price);
+            asksBody.innerHTML = sortedAsks.map(a => `<tr><td class="ask">${a.price}</td><td>${a.totalQuantity}</td></tr>`).join('');
+            
+            // Bids: highest at top (closest to spread), lowest at bottom
+            bidsBody.innerHTML = snapshot.bids.map(b => `<tr><td class="bid">${b.price}</td><td>${b.totalQuantity}</td></tr>`).join('');
+            
+            const spread = document.getElementById('spreadSpread');
+            if (snapshot.asks.length > 0 && snapshot.bids.length > 0) {
+                spread.innerText = `Spread: ${snapshot.asks[0].price - snapshot.bids[0].price}`;
+            } else {
+                spread.innerText = '---';
+            }
+        });
+
+        connection.start().catch(err => console.error(err));
+    </script>
+</body>
+</html>
