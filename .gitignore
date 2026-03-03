@@ -1,0 +1,42 @@
+# Build results
+**/bin/
+**/obj/
+
+# .NET user-specific files
+**/*.user
+**/*.rsuser
+**/*.suo
+**/*.userosscache
+**/*.sln.docstates
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+
+# Rider / JetBrains
+.idea/
+
+# Test results
+**/TestResults/
+
+# NuGet
+**/packages/
+# Uncomment if you have local tooling that creates this
+# nuget.config
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+coverage.*
+
+# Dotnet tools
+.dotnet/
+
+# Aspire / containers
+**/.aspire/
