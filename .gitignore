@@ -23,6 +23,7 @@
 **/packages/
 # Uncomment if you have local tooling that creates this
 # nuget.config
+/dist/
 
 # OS files
 .DS_Store

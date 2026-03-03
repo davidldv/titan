@@ -71,6 +71,26 @@ public sealed class OrderBook
         return true;
     }
 
+    public OrderBookSnapshot GetSnapshot(int maxDepth)
+    {
+        int bidDepth = Math.Min(maxDepth, _bidLevels);
+        int askDepth = Math.Min(maxDepth, _askLevels);
+
+        var bids = new OrderBookSnapshotLevel[bidDepth];
+        for (int i = 0; i < bidDepth; i++)
+        {
+            bids[i] = new OrderBookSnapshotLevel(_bids[i].Price, _bids[i].TotalQuantity);
+        }
+
+        var asks = new OrderBookSnapshotLevel[askDepth];
+        for (int i = 0; i < askDepth; i++)
+        {
+            asks[i] = new OrderBookSnapshotLevel(_asks[i].Price, _asks[i].TotalQuantity);
+        }
+
+        return new OrderBookSnapshot(bids, asks);
+    }
+
     public MatchResult Match(Order incoming)
     {
         if (incoming.Quantity <= 0 || incoming.Price <= 0)

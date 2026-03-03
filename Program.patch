@@ -1,0 +1,73 @@
+--- src/Titan.Web/Program.cs
++++ src/Titan.Web/Program.cs
+@@ -4,6 +4,8 @@
+ using Titan.Engine;
+ using Titan.Web;
++using Titan.Persistence;
++using Testcontainers.PostgreSql;
+ 
+ var builder = WebApplication.CreateBuilder(args);
+ 
++var postgresContainer = new PostgreSqlBuilder()
++    .WithImage("postgres:15-alpine")
++    .WithDatabase("titan")
++    .WithUsername("postgres")
++    .WithPassword("postgres")
++    .Build();
++
++// Start the container programmatically before the app boots up so the connection string is ready.
++await postgresContainer.StartAsync();
++
+ builder.Services.AddSignalR();
+ builder.Services.AddSingleton<BalanceSheet>(sp => 
+ {
+@@ -16,6 +28,8 @@
+ builder.Services.AddSingleton<Channel<Order>>(_ => Channel.CreateUnbounded<Order>(new UnboundedChannelOptions { SingleReader = true }));
++builder.Services.AddSingleton<Ledger>(_ => new Ledger(postgresContainer.GetConnectionString()));
+ builder.Services.AddHostedService<EngineLoop>();
+ 
+ var app = builder.Build();
+@@ -51,12 +65,14 @@
+         private readonly OrderBook _book;
+         private readonly Channel<Order> _channel;
+         private readonly IHubContext<BroadcasterHub> _hub;
++        private readonly Ledger _ledger;
+ 
+-        public EngineLoop(OrderBook book, Channel<Order> channel, IHubContext<BroadcasterHub> hub)
++        public EngineLoop(OrderBook book, Channel<Order> channel, IHubContext<BroadcasterHub> hub, Ledger ledger)
+         {
+             _book = book;
+             _channel = channel;
+             _hub = hub;
++            _ledger = ledger;
+         }
+ 
+         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+@@ -64,9 +80,31 @@
++            var events = new List<OrderBookEvent>(32);
++            long seq = 0;
+             await foreach (var order in _channel.Reader.ReadAllAsync(stoppingToken))
+             {
++                events.Clear();
++                var now = DateTimeOffset.UtcNow;
++                
++                events.Add(new OrderPlacedEvent(++seq, now, order.OrderId, order.TraderId, order.Side, order.Price, order.Quantity));
++
+                 var result = _book.Match(order);
++                
++                if (!result.Accepted)
++                {
++                    events.Add(new OrderRejectedEvent(++seq, now, order.OrderId, result.RejectReason));
++                }
++                // Ideally, we'd loop over actual trades and map them.
++                // To do that, we need `MatchResult` to return the `Trades` objects, not just a count.
++                else if (result.FilledQuantity > 0)
++                {
++                     events.Add(new TradeExecutedEvent(++seq, now, 0, order.OrderId, order.Price, result.FilledQuantity));
++                }
++
++                await _ledger.AppendEventsAsync(events, stoppingToken);
++
+                 // Broadcast snapshot every batch or time interval ideally, but for demo:
+                 var snapshot = _book.GetSnapshot(10);
+                 await _hub.Clients.All.SendAsync("OrderBookUpdated", snapshot, result);
