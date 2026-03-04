@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Titan.Web", "src\Titan.Web\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Titan.Persistence", "src\Titan.Persistence\Titan.Persistence.csproj", "{4AA016D8-B38C-4B4B-AC35-8F06CD8DFDCB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Titan.Persistence.Tests", "test\Titan.Persistence.Tests\Titan.Persistence.Tests.csproj", "{39C1C713-BA9D-4B18-B44A-7E22FB292670}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,18 @@ Global
 		{4AA016D8-B38C-4B4B-AC35-8F06CD8DFDCB}.Release|x64.Build.0 = Release|Any CPU
 		{4AA016D8-B38C-4B4B-AC35-8F06CD8DFDCB}.Release|x86.ActiveCfg = Release|Any CPU
 		{4AA016D8-B38C-4B4B-AC35-8F06CD8DFDCB}.Release|x86.Build.0 = Release|Any CPU
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670}.Debug|x64.Build.0 = Debug|Any CPU
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670}.Debug|x86.Build.0 = Debug|Any CPU
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670}.Release|x64.ActiveCfg = Release|Any CPU
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670}.Release|x64.Build.0 = Release|Any CPU
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670}.Release|x86.ActiveCfg = Release|Any CPU
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,5 +111,6 @@ Global
 		{EA13CA97-A370-4300-B9EA-3ABDA121DCDC} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
 		{12D1F0D8-42B4-40CD-A9F9-91F232BC1B68} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{4AA016D8-B38C-4B4B-AC35-8F06CD8DFDCB} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{39C1C713-BA9D-4B18-B44A-7E22FB292670} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
 	EndGlobalSection
 EndGlobal
