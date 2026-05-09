@@ -29,3 +29,13 @@ public readonly record struct MatchResult(
     long RemainingQuantity,
     int Trades
 );
+
+public readonly record struct Trade(
+    long MakerOrderId,
+    long TakerOrderId,
+    int MakerTraderId,
+    int TakerTraderId,
+    Side TakerSide,
+    long Price,
+    long Quantity
+);

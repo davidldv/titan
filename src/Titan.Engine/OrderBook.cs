@@ -91,7 +91,9 @@ public sealed class OrderBook
         return new OrderBookSnapshot(bids, asks);
     }
 
-    public MatchResult Match(Order incoming)
+    public MatchResult Match(Order incoming) => Match(incoming, trades: null);
+
+    public MatchResult Match(Order incoming, List<Trade>? trades)
     {
         if (incoming.Quantity <= 0 || incoming.Price <= 0)
         {
@@ -105,7 +107,7 @@ public sealed class OrderBook
 
         long remaining = incoming.Quantity;
         long filled = 0;
-        int trades = 0;
+        int tradeCount = 0;
 
         if (incoming.Side == Side.Buy)
         {
@@ -132,9 +134,18 @@ public sealed class OrderBook
                         buyerLimitPrice: incoming.Price
                     );
 
+                    trades?.Add(new Trade(
+                        MakerOrderId: maker.OrderId,
+                        TakerOrderId: incoming.OrderId,
+                        MakerTraderId: maker.TraderId,
+                        TakerTraderId: incoming.TraderId,
+                        TakerSide: Side.Buy,
+                        Price: execPrice,
+                        Quantity: tradeQty));
+
                     remaining -= tradeQty;
                     filled += tradeQty;
-                    trades++;
+                    tradeCount++;
 
                     maker.RemainingQuantity -= tradeQty;
                     bestAsk.TotalQuantity -= tradeQty;
@@ -171,14 +182,14 @@ public sealed class OrderBook
                 {
                     // Roll back unfilled locked funds.
                     _balances.ReleaseUnfilled(in incoming, remaining);
-                    return new MatchResult(false, RejectReason.CapacityExceeded, filled, remaining, trades);
+                    return new MatchResult(false, RejectReason.CapacityExceeded, filled, remaining, tradeCount);
                 }
 
-                return new MatchResult(true, RejectReason.None, filled, remaining, trades);
+                return new MatchResult(true, RejectReason.None, filled, remaining, tradeCount);
             }
 
             // Fully filled; should have consumed the entire lock via SettleTrade.
-            return new MatchResult(true, RejectReason.None, filled, 0, trades);
+            return new MatchResult(true, RejectReason.None, filled, 0, tradeCount);
         }
         else
         {
@@ -205,9 +216,18 @@ public sealed class OrderBook
                         buyerLimitPrice: maker.Price
                     );
 
+                    trades?.Add(new Trade(
+                        MakerOrderId: maker.OrderId,
+                        TakerOrderId: incoming.OrderId,
+                        MakerTraderId: maker.TraderId,
+                        TakerTraderId: incoming.TraderId,
+                        TakerSide: Side.Sell,
+                        Price: execPrice,
+                        Quantity: tradeQty));
+
                     remaining -= tradeQty;
                     filled += tradeQty;
-                    trades++;
+                    tradeCount++;
 
                     maker.RemainingQuantity -= tradeQty;
                     bestBid.TotalQuantity -= tradeQty;
@@ -241,13 +261,13 @@ public sealed class OrderBook
                 if (!AddResting(incoming, remaining))
                 {
                     _balances.ReleaseUnfilled(in incoming, remaining);
-                    return new MatchResult(false, RejectReason.CapacityExceeded, filled, remaining, trades);
+                    return new MatchResult(false, RejectReason.CapacityExceeded, filled, remaining, tradeCount);
                 }
 
-                return new MatchResult(true, RejectReason.None, filled, remaining, trades);
+                return new MatchResult(true, RejectReason.None, filled, remaining, tradeCount);
             }
 
-            return new MatchResult(true, RejectReason.None, filled, 0, trades);
+            return new MatchResult(true, RejectReason.None, filled, 0, tradeCount);
         }
     }
 
